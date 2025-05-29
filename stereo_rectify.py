@@ -77,6 +77,7 @@ def stereo_rectify_helper(sr, thermal_img_path, eo_img_path, pair_type, output_d
     os.makedirs(eo_dir, exist_ok=True)
     os.makedirs(sxs_dir, exist_ok=True)
     os.makedirs(overlay_dir, exist_ok=True)
+    # import pdb; pdb.set_trace()
 
     # Process image pair
     thermal_img, eo_img, thermal_img_normalized = process_thermal_eo_pair(thermal_img_path, eo_img_path)
@@ -94,7 +95,8 @@ def stereo_rectify_helper(sr, thermal_img_path, eo_img_path, pair_type, output_d
         thermal_img_normalized_rect = cv2.rotate(thermal_img_normalized_rect, cv2.ROTATE_180)
 
     thermal_eo_sxs = np.hstack([thermal_img_normalized_rect, eo_img_rect])
-    thermal_eo_overlay = cv2.addWeighted(eo_img_rect, 0.4, thermal_img_normalized_rect, 0.5, 0)
+    # print(f'Writing eo_img_rect.shape {eo_img_rect.shape} thermal_img_rect.shape {thermal_img_rect.shape}, eo_img_rect.dtype {eo_img_rect.dtype} thermal_img_normalized_rect.dtype {thermal_img_normalized_rect.dtype}')
+    # thermal_eo_overlay = cv2.addWeighted(eo_img_rect, 0.4, thermal_img_normalized_rect, 0.5, 0)
 
     thermal_img_save_path = os.path.join(thermal16_dir, os.path.basename(thermal_img_path))
     thermal8_save_path = os.path.join(thermal8_dir, os.path.basename(thermal_img_path).replace('.tiff', '.png'))
@@ -109,7 +111,7 @@ def stereo_rectify_helper(sr, thermal_img_path, eo_img_path, pair_type, output_d
     cv2.imwrite(thermal8_save_path, thermal_img_normalized_rect)
     cv2.imwrite(eo_save_path, eo_img_rect)
     cv2.imwrite(sxs_save_path, thermal_eo_sxs)
-    cv2.imwrite(overlay_save_path, thermal_eo_overlay)
+    # cv2.imwrite(overlay_save_path, thermal_eo_overlay)
 
 
 def stereo_rectify_df(data_dir, sync_df, thermal_mono_10x10_calib_yaml, color_thermal_10x10_calib_yaml, output_dir, rotate180=False):
@@ -117,15 +119,17 @@ def stereo_rectify_df(data_dir, sync_df, thermal_mono_10x10_calib_yaml, color_th
     sr_color_thermal = StereoRectifier(color_thermal_10x10_calib_yaml)
 
     for idx, row in tqdm.tqdm(sync_df.iterrows(), total=len(sync_df)):
-        thermal_img_path = os.path.join(data_dir, row['thermal_filepath'])
+        thermal_img_path = os.path.join(data_dir, '/'.join(row['thermal_filepath'].split('/')[1:]))
+
+        # print(f'Processing {thermal_img_path}')
 
         # Do a null check on the filepaths
         if type(row['mono_filepath']) == str:
-            mono_img_path = os.path.join(data_dir, row['mono_filepath'])
+            mono_img_path = os.path.join(data_dir, '/'.join(row['mono_filepath'].split('/')[1:]))
             stereo_rectify_helper(sr_thermal_mono, thermal_img_path, mono_img_path,
                                   'thermal_mono', output_dir, rotate180)
         if type(row['color_filepath']) == str:
-            color_img_path = os.path.join(data_dir, row['color_filepath'])
+            color_img_path = os.path.join(data_dir, '/'.join(row['color_filepath'].split('/')[1:]))
             stereo_rectify_helper(sr_color_thermal, thermal_img_path, color_img_path,
                                   'thermal_color', output_dir, rotate180)
 
@@ -158,7 +162,7 @@ if __name__ == '__main__':
     # stereo_rectify_df(args.data_dir, sync_df, args.thermal_mono_calib_yaml,
     #                   args.color_thermal_calib_yaml, args.output_dir, rotate180=args.rotate180)
 
-    n_jobs = 8
+    n_jobs = 1
     results = Parallel(n_jobs=n_jobs)(delayed(stereo_rectify_df)(
         args.data_dir,
         df,

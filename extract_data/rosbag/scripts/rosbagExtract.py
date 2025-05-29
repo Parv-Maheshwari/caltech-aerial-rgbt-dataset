@@ -202,7 +202,7 @@ def extractBagDirectory(root_directory) :
 
         # Process in series.  Easier to debug issues
         counter = 1
-        for bagName in bagNames :
+        for bag_id,bagName in enumerate(bagNames) :
             print(
                 "=============== Bag ", 
                 counter,
@@ -228,6 +228,7 @@ def process_bag(bagName) :
             topics = bagFile.get_type_and_topic_info()
 
             # Extract topics
+            # print("IMAGE_BAG_TOPICS",getWantedTopics(topics.topics,IMAGE_BAG_TOPICS))
             imageExtract(bagFile, getWantedTopics(topics.topics,IMAGE_BAG_TOPICS))
             gridmapExtract(bagFile, getWantedTopics(topics.topics,GRIDMAP_BAG_TOPICS))
             csvExtract(bagFile, getWantedTopics(topics.topics,CSV_BAG_TOPICS))
@@ -258,6 +259,7 @@ def checkBag(bagName) :
         bagTo = bagName.rstrip('.active')
         shutil.move(bagFrom, bagName)
         shutil.move(bagName, bagTo)
+        print("Removing directory ",output_dir)
         shutil.rmtree(output_dir)
         print("Done!")
 
@@ -292,7 +294,7 @@ def csvExtract(bagFile,topic_list):
     print("\tExtracting csv files")
 
     # Create a folder for the data
-    extractFolder = os.path.join(os.path.dirname(bagFile.filename),'csv')
+    extractFolder = os.path.join(bagFile.filename.split('.')[0],'csv')
 
     if (not os.path.exists(extractFolder)) :
         os.makedirs(extractFolder)
@@ -345,9 +347,10 @@ def csvExtract(bagFile,topic_list):
         print(FAILED_CSV_MSG.format(topic))
         print(e)
     finally:
+        # print("Deleting temporary files... at",os.path.splitext(bagFile.filename)[0])
         # Delete the temporary folder
-        if (os.path.isdir(os.path.splitext(bagFile.filename)[0])) :
-            shutil.rmtree(os.path.splitext(bagFile.filename)[0])
+        # if (os.path.isdir(os.path.splitext(bagFile.filename)[0])) :
+        #     shutil.rmtree(os.path.splitext(bagFile.filename)[0])
 
         # just in case (reader has no close method)
         if 'bagReader' in locals():
@@ -391,11 +394,16 @@ def imageExtract(bagFile,topic_list):
             # Work out file paths/names
             camera_name = ''
             csvName   = topic.replace('/', '_') + CSV_EXT
-            csvFolder = os.path.join(os.path.dirname(bagFile.filename),'csv')
+            # print("os.path.dirname(bagFile.filename)", os.path.dirname(bagFile.filename))
+            # print("os.path.dirname(bagFile.filename)", bagFile.filename)
+
+            # csvFolder = os.path.join(os.path.dirname(bagFile.filename),'csv')
+            csvFolder = os.path.join(bagFile.filename.split('.')[0],'csv')
+
             topicNameSplit = topic.split('/')
 
             # Work out folder names
-            imgFolder = os.path.join(os.path.dirname(bagFile.filename),'images')
+            imgFolder = os.path.join(bagFile.filename.split('.')[0],'images')
             for topic_part in topicNameSplit :
                 imgFolder = os.path.join(imgFolder,topic_part)
 
@@ -540,8 +548,8 @@ def gridmapExtract(bagFile,topic_list):
     # Extract gridmap using cv bridge
     cvBridge = CvBridge()
 
-    imgFolder = os.path.join(os.path.dirname(bagFile.filename),'images')
-    csvFolder = os.path.join(os.path.dirname(bagFile.filename),'csv')
+    imgFolder = os.path.join(bagFile.filename.split('.')[0],'images')
+    csvFolder = os.path.join(bagFile.filename.split('.')[0],'csv')
 
     try:
         for topic in topic_list:

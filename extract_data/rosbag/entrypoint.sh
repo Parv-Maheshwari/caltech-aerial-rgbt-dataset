@@ -6,12 +6,12 @@
 
 # exit when any command fails
 set -e
-
+bash
 # Run all the scripts
 # /app/reindexBags.py
 # /app/decompressBags.py
 # /app/compressBags.py
-/app/rosbagExtract.py
+# /app/rosbagExtract.py
 # /app/createVideo.py
 # /app/compressExtractionOutputs.py
 # /app/extractExtractionOutputs.py
